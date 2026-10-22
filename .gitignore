@@ -1,0 +1,18 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+backend/afe.db
+backend/*.db
+backend/var/
+backend/staticfiles/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# playwright-cli page snapshots (from .claude/skills/run-afe)
+.playwright-cli/

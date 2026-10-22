@@ -1,0 +1,126 @@
+# Afe on one free server: the development level (docs/Deployment_Level_AWS.md, "Free development server").
+# Oracle Cloud "Always Free" ARM server or any Linux server with Docker. From this folder:
+#
+#   cp .env.example .env            # then fill it in
+#   docker compose up -d --build    # database, migrations, API, worker, website, Caddy, backups
+#   docker compose --profile tunnel up -d    # also start Cloudflare Tunnel (instead of opening ports 80/443)
+#   docker compose --profile scan up -d      # also start the ClamAV virus scanner (needs ~2 GB of memory)
+#
+# The same images run on AWS at beta; only the settings change.
+
+name: afe
+
+x-app: &app
+  image: afe-api
+  build: ../../backend
+  env_file: .env
+  environment:
+    AFE_DATABASE_URL: postgresql+psycopg://afe:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/afe
+    AFE_CLAMD_HOST: clamav
+    # Trust X-Forwarded-For only from the containers here (Caddy, the website), not from the internet.
+    FORWARDED_ALLOW_IPS: 172.16.0.0/12,10.0.0.0/8,192.168.0.0/16
+  restart: unless-stopped
+  depends_on:
+    db: { condition: service_healthy }
+
+services:
+  db:
+    image: postgres:16-alpine # the same major version as RDS in infra/terraform/staging
+    environment:
+      POSTGRES_DB: afe
+      POSTGRES_USER: afe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U afe -d afe"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+    # No ports: only the other containers reach the database.
+
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  api:
+    <<: *app
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+
+  # The every-minute and 5-minute jobs, plus the daily jobs at their hour (there is no EventBridge here).
+  # /home/afe is a volume so the record of which daily jobs ran survives restarts.
+  worker:
+    <<: *app
+    command: ["python", "-m", "app.cli", "worker", "--with-daily", "--state-file", "/home/afe/daily-jobs.json"]
+    volumes: [workerstate:/home/afe]
+    healthcheck: { disable: true }
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    image: afe-web
+    build: ../../frontend
+    environment:
+      AFE_API_URL: http://api:8000
+      ORIGIN: ${AFE_FRONTEND_URL:?set AFE_FRONTEND_URL in .env}
+      BODY_SIZE_LIMIT: 20M
+      # Caddy puts the visitor's real address in X-Forwarded-For; rate limits use it.
+      ADDRESS_HEADER: X-Forwarded-For
+      XFF_DEPTH: "1"
+    depends_on: [api]
+    restart: unless-stopped
+
+  # HTTPS in front of everything. With a domain pointing at this server, Caddy gets free Let's
+  # Encrypt certificates. With Cloudflare Tunnel, the addresses start with http:// and Cloudflare does HTTPS.
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env}
+      API_ADDRESS: ${API_ADDRESS:?set API_ADDRESS in .env}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web, api]
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on: [caddy]
+    restart: unless-stopped
+
+  # Set AFE_MALWARE_SCANNER=app.modules.media.scan.ClamAvScanner in .env when this runs.
+  # The Debian-based image has ARM builds. First start downloads signatures (a few minutes).
+  clamav:
+    image: clamav/clamav-debian:stable
+    profiles: ["scan"]
+    restart: unless-stopped
+
+  # Nightly database dump to Cloudflare R2, kept BACKUP_KEEP_DAYS days. See backup.sh.
+  backup:
+    image: postgres:16-alpine
+    entrypoint: ["sh", "/backup.sh"]
+    env_file: .env
+    environment:
+      PGHOST: db
+      PGUSER: afe
+      PGDATABASE: afe
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes: ["./backup.sh:/backup.sh:ro"]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  workerstate:
+  caddy_data:
+  caddy_config:

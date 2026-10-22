@@ -1,0 +1,13 @@
+# Runtime
+fastapi>=0.141,<0.142
+uvicorn[standard]>=0.53,<0.54
+SQLAlchemy>=2.0.54,<2.1
+alembic>=1.20,<1.21
+pydantic-settings>=2.15,<3
+python-multipart>=0.0.32
+PyJWT>=2.15,<3
+psycopg[binary]>=3.3,<4
+Pillow>=12.3,<13
+ImageHash>=4.3,<5
+boto3>=1.43,<2
+anthropic>=1.9,<2

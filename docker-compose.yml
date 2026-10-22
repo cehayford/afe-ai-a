@@ -1,0 +1,76 @@
+# Local stack that mirrors production: PostgreSQL, S3 (MinIO), the API and the web app.
+#   docker compose up --build
+#   docker compose run --rm api python -m app.cli seed-demo
+# Web: http://localhost:3000  API docs: http://localhost:8000/api/docs  MinIO: http://localhost:9001
+name: afe
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: afe
+      POSTGRES_USER: afe
+      POSTGRES_PASSWORD: afe-local-only
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U afe -d afe"]
+      interval: 5s
+      retries: 10
+
+  s3:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: afe-local
+      MINIO_ROOT_PASSWORD: afe-local-only
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [s3data:/data]
+
+  s3-buckets:
+    image: minio/mc:latest
+    depends_on: [s3]
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://s3:9000 afe-local afe-local-only; do sleep 1; done;
+      mc mb --ignore-existing local/afe-media-public local/afe-kyc-private;
+      mc anonymous set download local/afe-media-public;
+      "
+
+  api:
+    build: ./backend
+    depends_on:
+      db: { condition: service_healthy }
+      s3-buckets: { condition: service_completed_successfully }
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      AFE_DEBUG: "1"
+      AFE_DATABASE_URL: postgresql+psycopg://afe:afe-local-only@db:5432/afe
+      AFE_FRONTEND_URL: http://localhost:3000
+      AFE_STORAGE_BACKEND: s3
+      AFE_S3_ENDPOINT_URL: http://s3:9000
+      AFE_S3_REGION: us-east-1
+      AFE_MEDIA_URL: http://localhost:9000/afe-media-public
+      AWS_ACCESS_KEY_ID: afe-local
+      AWS_SECRET_ACCESS_KEY: afe-local-only
+    ports: ["8000:8000"]
+
+  web:
+    build: ./frontend
+    depends_on: [api]
+    environment:
+      AFE_API_URL: http://api:8000
+      ORIGIN: http://localhost:3000
+    ports: ["3000:3000"]
+
+  # Optional: the real malware scanner. `docker compose --profile scan up`, then set
+  # AFE_MALWARE_SCANNER=app.modules.media.scan.ClamAvScanner and AFE_CLAMD_HOST=clamav on the api.
+  # First start takes a few minutes while it downloads signatures.
+  clamav:
+    image: clamav/clamav:stable
+    profiles: ["scan"]
+    ports: ["3310:3310"]
+
+volumes:
+  pgdata:
+  s3data:

@@ -1,0 +1,148 @@
+# You can override the included template(s) by including variable overrides
+# SAST customization: https://docs.gitlab.com/user/application_security/sast/#available-cicd-variables
+# Secret Detection customization: https://docs.gitlab.com/user/application_security/secret_detection/pipeline/configure/
+# Dependency Scanning customization: https://docs.gitlab.com/user/application_security/dependency_scanning/dependency_scanning_sbom/#customizing-analyzer-behavior
+# Container Scanning customization: https://docs.gitlab.com/user/application_security/container_scanning/#customizing-analyzer-behavior
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ci/variables/#cicd-variable-precedence
+stages:
+- test
+- secret-detection
+- build
+sast:
+  stage: test
+include:
+- template: Security/SAST.gitlab-ci.yml
+- template: Security/Secret-Detection.gitlab-ci.yml
+variables:
+  SECRET_DETECTION_ENABLED: 'true'
+secret_detection:
+  stage: secret-detection
+
+# Afe backend: lint, migration drift and tests. Target under 8 minutes (plan §13). (No `ruff format --check`: the code
+# base was never formatted with ruff, and reformatting it is its own change.)
+backend:
+  stage: test
+  image: python:3.12-slim
+  variables:
+    AFE_DEBUG: "1"
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: backend-pip-$CI_COMMIT_REF_SLUG
+    paths: [.cache/pip]
+  before_script:
+    - cd backend
+    - pip install -r requirements-dev.txt
+  script:
+    - ruff check .
+    - alembic upgrade head
+    - alembic check  # fails if the models changed without a migration
+    - pytest
+  rules:
+    - changes: [backend/**/*, .gitlab-ci.yml]
+
+# The same tests and migrations against PostgreSQL, which staging and production run.
+backend-postgres:
+  stage: test
+  image: python:3.12-slim
+  services:
+    - name: postgres:16-alpine
+      alias: db
+  variables:
+    AFE_DEBUG: "1"
+    POSTGRES_DB: afe
+    POSTGRES_USER: afe
+    POSTGRES_PASSWORD: afe-ci-only
+    AFE_DATABASE_URL: postgresql+psycopg://afe:afe-ci-only@db:5432/afe
+    AFE_TEST_DATABASE_URL: postgresql+psycopg://afe:afe-ci-only@db:5432/afe
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: backend-pip-$CI_COMMIT_REF_SLUG
+    paths: [.cache/pip]
+  before_script:
+    - cd backend
+    - pip install -r requirements-dev.txt
+  script:
+    - alembic upgrade head
+    - alembic check
+    - alembic downgrade base  # migrations must also run backwards
+    - pytest
+  rules:
+    - changes: [backend/**/*, .gitlab-ci.yml]
+
+# Afe frontend: type check, unit tests, production build.
+frontend:
+  stage: test
+  image: node:24-alpine
+  cache:
+    key: frontend-npm-$CI_COMMIT_REF_SLUG
+    paths: [.npm]
+  before_script:
+    - cd frontend
+    - npm ci --cache "$CI_PROJECT_DIR/.npm" --prefer-offline
+  script:
+    - npm run check
+    - npx vitest run
+    - npm run build
+  rules:
+    - changes: [frontend/**/*, .gitlab-ci.yml]
+
+# Infrastructure: formatting and a static validation (no AWS credentials needed).
+terraform:
+  stage: test
+  image:
+    name: hashicorp/terraform:1.9
+    entrypoint: [""]
+  script:
+    - cd infra/terraform/staging
+    - terraform fmt -check -recursive
+    - terraform init -backend=false -input=false
+    - terraform validate
+  rules:
+    - changes: [infra/**/*, .gitlab-ci.yml]
+
+# Images for staging and production, built once the tests pass, on the staging and main branches only. Each image is
+# tagged with its commit (ECR keeps tags immutable), so a deploy names exactly one commit; deploying is a manual step
+# (docs/deploy.md). AWS access comes from GitLab's identity token (OIDC): no AWS keys are stored in GitLab.
+# CI/CD variables, scoped to the "staging" and "production" environments, from `terraform output`:
+#   AWS_ROLE_ARN (ci_role_arn), ECR_REGISTRY (ecr_registry), AWS_REGION (the stack's region).
+# The job runs only once the project variable PUSH_IMAGES is "true", so pipelines stay green until AWS is set up.
+build-images:
+  stage: build
+  image: docker:27
+  services: [docker:27-dind]
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: https://gitlab.com
+  rules:
+    - if: $PUSH_IMAGES == "true" && $CI_COMMIT_BRANCH == "staging"
+      variables: {DEPLOY_ENV: staging}
+    - if: $PUSH_IMAGES == "true" && $CI_COMMIT_BRANCH == "main"
+      variables: {DEPLOY_ENV: production}
+  environment:
+    name: $DEPLOY_ENV
+    action: prepare  # builds for the environment; it doesn't deploy to it
+  before_script:
+    - apk add --no-cache aws-cli
+    - >
+      export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
+      $(aws sts assume-role-with-web-identity --role-arn "$AWS_ROLE_ARN" --role-session-name "gitlab-$CI_PIPELINE_ID"
+      --web-identity-token "$GITLAB_OIDC_TOKEN" --duration-seconds 3600
+      --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
+    - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+  script:
+    - API_IMAGE="$ECR_REGISTRY/afe-$DEPLOY_ENV-api:$CI_COMMIT_SHA"
+    - WEB_IMAGE="$ECR_REGISTRY/afe-$DEPLOY_ENV-web:$CI_COMMIT_SHA"
+    - docker build -t "$API_IMAGE" backend
+    - docker build -t "$WEB_IMAGE" frontend
+    - docker push "$API_IMAGE"
+    - docker push "$WEB_IMAGE"
+    - echo "api_image = \"$API_IMAGE\"" > images.auto.tfvars
+    - echo "web_image = \"$WEB_IMAGE\"" >> images.auto.tfvars
+    - cat images.auto.tfvars
+  artifacts:
+    name: images-$DEPLOY_ENV-$CI_COMMIT_SHORT_SHA
+    paths: [images.auto.tfvars]
+    expire_in: 90 days

@@ -1,0 +1,9 @@
+{
+  "name": "Afe: verified homes in Accra",
+  "short_name": "Afe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f8f7",
+  "theme_color": "#0e4a3e",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

@@ -1,0 +1,207 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with PostGIS
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: houseagent-db
+    environment:
+      POSTGRES_DB: houseagent
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password_change_in_production}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_database.py:/docker-entrypoint-initdb.d/init.py
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - houseagent-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: houseagent-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-dev_redis_password}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - houseagent-network
+
+  # FastAPI Backend
+  api:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile
+    container_name: houseagent-api
+    environment:
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-dev_password_change_in_production}@db:5432/houseagent
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379
+      - SECRET_KEY=${SECRET_KEY:-dev_secret_key_change_in_production}
+      - ENVIRONMENT=development
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+      # Object storage (MinIO locally, S3 in production)
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-afe_dev}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-afe_dev_password}
+      - S3_BUCKET_MEDIA_PUBLIC=afe-media-public
+      - S3_BUCKET_MEDIA_ORIGINALS=afe-media-originals
+      - S3_BUCKET_KYC=afe-kyc-private
+      - S3_BUCKET_DOCUMENTS=afe-documents
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app  # Hot reload for development
+    networks:
+      - houseagent-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker (Background Tasks)
+  celery-worker:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile
+    container_name: houseagent-celery
+    environment:
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-dev_password_change_in_production}@db:5432/houseagent
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379
+      - SECRET_KEY=${SECRET_KEY:-dev_secret_key_change_in_production}
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-afe_dev}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-afe_dev_password}
+    depends_on:
+      - db
+      - redis
+      - minio
+    volumes:
+      - ./app:/app/app
+    networks:
+      - houseagent-network
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+
+  # MinIO (local S3-compatible object storage for development)
+  minio:
+    image: minio/minio:RELEASE.2024-10-13T13-34-11Z
+    container_name: houseagent-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-afe_dev}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-afe_dev_password}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # web console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - houseagent-network
+
+  # Creates the dev buckets once MinIO is up (mirrors the production bucket split)
+  minio-init:
+    image: minio/mc:RELEASE.2024-10-08T09-37-26Z
+    container_name: houseagent-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-afe_dev} ${MINIO_ROOT_PASSWORD:-afe_dev_password} &&
+      mc mb -p local/afe-media-public local/afe-media-originals local/afe-kyc-private local/afe-documents &&
+      mc anonymous set download local/afe-media-public &&
+      echo 'dev buckets ready'"
+    networks:
+      - houseagent-network
+
+  # Typesense Search Engine
+  typesense:
+    image: typesense/typesense:0.25.1
+    container_name: houseagent-search
+    environment:
+      - TYPESENSE_API_KEY=${TYPESENSE_API_KEY:-dev_typesense_key}
+      - TYPESENSE_DATA_DIR=/data
+    ports:
+      - "8108:8108"
+    volumes:
+      - typesense_data:/data
+    networks:
+      - houseagent-network
+
+  # Nginx (Reverse Proxy)
+  nginx:
+    image: nginx:alpine
+    container_name: houseagent-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    networks:
+      - houseagent-network
+
+  # Prometheus (Metrics)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: houseagent-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployment/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - houseagent-network
+
+  # Grafana (Visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: houseagent-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployment/grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - houseagent-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  typesense_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  houseagent-network:
+    driver: bridge

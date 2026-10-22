@@ -1,0 +1,447 @@
+<title>Afe Feature Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --brand:#0E4A3E; --brand-ink:#FFFFFF; --amber:#D9961A; --amber-soft:#FBF1DC;
+  --paper:#F5F8F7; --surface:#FFFFFF; --ink:#15211E; --muted:#56665F; --line:#D5DFDB; --tint:#E7F0EC;
+  --accent:#0F6B57; --crit:#B42318; --crit-soft:#FDECEA; --ok:#16794C; --ok-soft:#E3F4EA; --warn:#9A6200; --warn-soft:#FDF3DE;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --brand:#0B3A31; --brand-ink:#EAF4F0; --amber:#F0B84A; --amber-soft:#3A2E14;
+    --paper:#0D1513; --surface:#13201C; --ink:#E4EDE9; --muted:#9DB0A8; --line:#26382F; --tint:#18302A;
+    --accent:#5FC7A8; --crit:#F97066; --crit-soft:#3B1917; --ok:#4ADE9A; --ok-soft:#133226; --warn:#F5B94A; --warn-soft:#352A12;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --brand:#0B3A31; --brand-ink:#EAF4F0; --amber:#F0B84A; --amber-soft:#3A2E14;
+  --paper:#0D1513; --surface:#13201C; --ink:#E4EDE9; --muted:#9DB0A8; --line:#26382F; --tint:#18302A;
+  --accent:#5FC7A8; --crit:#F97066; --crit-soft:#3B1917; --ok:#4ADE9A; --ok-soft:#133226; --warn:#F5B94A; --warn-soft:#352A12;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.mast{background:var(--brand);color:var(--brand-ink);border-bottom:5px solid var(--amber);padding-inline:16px}
+.mast-in{max-width:1180px;margin:0 auto;padding-block:40px 34px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.mast h1{font-family:var(--f-display);font-size:clamp(34px,6vw,56px);line-height:1.02;margin:10px 0 12px;letter-spacing:-.01em}
+.mast p.lede{max-width:66ch;font-size:18px;margin:0;opacity:.95}
+.meta{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-family:var(--f-mono);font-size:12.5px;opacity:.9}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;display:grid;grid-template-columns:1fr;gap:40px}
+@media (min-width:1020px){.wrap{grid-template-columns:220px minmax(0,1fr)}}
+nav.toc{display:none}
+@media (min-width:1020px){nav.toc{display:block;position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;padding-block:36px;font-size:13.5px}}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+nav.toc a{display:block;padding:5px 10px;border-radius:6px;color:var(--muted);text-decoration:none}
+nav.toc a:hover{background:var(--tint);color:var(--ink)}
+nav.toc .toc-h{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 10px 8px}
+main{padding-block:28px 80px;min-width:0}
+section{padding-top:30px;scroll-margin-top:16px}
+h2{font-family:var(--f-display);font-size:clamp(25px,3.4vw,32px);line-height:1.15;margin:0 0 6px;text-wrap:balance;letter-spacing:-.005em}
+h2 .sn{font-family:var(--f-mono);font-size:13px;color:var(--amber);font-weight:500;display:block;letter-spacing:.06em;margin-bottom:6px}
+h3{font-family:var(--f-display);font-size:20px;margin:28px 0 8px;text-wrap:balance}
+h4{font-size:15px;margin:18px 0 6px}
+p,li{max-width:72ch}
+.sub{color:var(--muted);margin-top:0}
+.prose p{margin:0 0 12px}
+ul.tight{padding-left:20px;margin:6px 0 12px}
+ul.tight li{margin-bottom:4px}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+.statement{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--amber);border-radius:4px;padding:16px 20px;font-size:17px;font-style:italic;margin:6px 0 18px;max-width:none}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0 8px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.kpi b{display:block;font-family:var(--f-display);font-size:24px;line-height:1.1;color:var(--accent);font-variant-numeric:tabular-nums}
+.kpi span{font-size:13.5px;color:var(--muted);display:block;margin-top:4px}
+.tbl{overflow-x:auto;margin:10px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;font-family:var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--tint)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+td.plain{font-weight:400}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:11.5px;padding:2px 8px;border-radius:99px;white-space:nowrap;font-weight:500}
+.p1{background:var(--ok-soft);color:var(--ok)}
+.p2{background:var(--warn-soft);color:var(--warn)}
+.p3{background:var(--tint);color:var(--accent)}
+.p4{background:var(--line);color:var(--muted)}
+.gate{background:var(--crit-soft);color:var(--crit)}
+.callout{background:var(--amber-soft);border-radius:8px;padding:14px 18px;margin:14px 0 18px}
+.callout strong:first-child{display:block;margin-bottom:4px}
+.callout.green{background:var(--tint)}
+.callout p{margin:0 0 6px}
+.diagram{background:#FFFFFF;color:#15211E;border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;margin:12px 0 18px}
+.diagram pre{margin:0;background:transparent}
+.gantt{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface);margin:12px 0 18px}
+.g{display:grid;grid-template-columns:190px repeat(52,minmax(15px,1fr));min-width:980px;font-size:12.5px}
+.g .lab{grid-column:1;padding:6px 10px;border-bottom:1px solid var(--line);color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g .cell{border-bottom:1px solid var(--line);position:relative;height:32px}
+.g .hdr{font-family:var(--f-mono);font-size:11px;color:var(--muted);padding:8px 0 6px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--tint)}
+.g .bar{align-self:center;height:16px;border-radius:4px;margin-block:8px;position:relative;z-index:1}
+.g .b0{background:#8FB8AB}.g .b1{background:var(--accent)}.g .b2{background:var(--amber)}.g .b3{background:#6C8DB5}.g .bh{background:repeating-linear-gradient(45deg,var(--line) 0 4px,transparent 4px 8px)}.g .bg{background:var(--crit)}
+.g .ms{align-self:center;justify-self:center;width:12px;height:12px;background:var(--crit);transform:rotate(45deg);z-index:1;margin-block:10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);padding:10px 12px;border-top:1px solid var(--line)}
+.legend i{display:inline-block;width:12px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.phase{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:18px 20px;margin:14px 0 20px}
+.phase-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:6px}
+.phase-h h3{margin:0}
+.phase-h .when{font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+.sprints{display:grid;gap:10px;margin-top:12px}
+.sprint{display:grid;grid-template-columns:1fr;gap:4px 16px;border-top:1px dashed var(--line);padding-top:10px}
+@media (min-width:700px){.sprint{grid-template-columns:170px minmax(0,1fr)}}
+.sprint .sw{font-family:var(--f-mono);font-size:12.5px;color:var(--accent);font-weight:500}
+.sprint .sw small{display:block;color:var(--muted);font-weight:400}
+.sprint ul{margin:0;padding-left:18px}
+.sprint li{margin-bottom:3px;font-size:15px}
+.exit{margin-top:14px;padding:10px 14px;border-radius:6px;background:var(--tint);font-size:14.5px}
+.exit b{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-right:6px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:12px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card h4{margin:0 0 6px}
+.card p,.card li{font-size:14.5px}
+.card ul{padding-left:18px;margin:4px 0 0}
+.checklist{list-style:none;padding:0;margin:8px 0 16px;display:grid;gap:6px}
+.checklist li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start}
+.checklist li::before{content:"";width:14px;height:14px;border:1.5px solid var(--accent);border-radius:3px;margin-top:5px}
+.state{display:inline-block;font-family:var(--f-mono);font-size:11.5px;padding:2px 8px;border-radius:99px;white-space:nowrap;font-weight:500}
+.s-done{background:var(--ok-soft);color:var(--ok)}
+.s-off{background:var(--warn-soft);color:var(--warn)}
+.s-todo{background:var(--line);color:var(--muted)}
+.status-line{margin-top:10px;padding:10px 14px;border-radius:6px;background:var(--ok-soft);font-size:14.5px}
+.status-line b{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ok);margin-right:6px}
+.foot{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:48px;padding-top:16px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+<style>
+/* Roadmap additions, from the build plan's tokens */
+.on-brand{color:var(--brand-ink);text-decoration-color:var(--amber)}
+table.cal td{font-size:13.5px}
+table.cal td:first-child{white-space:nowrap}
+table.cal td.on{background:var(--tint);color:var(--ink)}
+table.cal td.gate{background:var(--crit-soft);color:var(--crit)}
+table.cal td.free{background:var(--amber-soft);color:var(--ink);font-weight:500}
+table.cal th small{font-weight:400;letter-spacing:0;text-transform:none}
+</style>
+
+<header class="mast">
+  <div class="mast-in">
+    <div class="eyebrow">Afe · Implementation plan · Year 1 to Year 2</div>
+    <h1>After the core: what we build next, and when</h1>
+    <p class="lede">The software for verification, protected payments and fraud detection is built. This plan covers everything else Afe needs to launch, grow and earn: eight workstreams, in order, with the gates each one waits for.</p>
+    <div class="meta">
+      <span>Date: 24 Sep 2026 · updated with build progress</span>
+      <span>Builds on: <a class="on-brand" href="https://claude.ai/artifact/RNc9Rg2qe1eTaNgg1EKHYf">Afe Build Plan v1.2</a></span>
+      <span>W1 = Mon 5 Oct 2026</span>
+      <span>Launch offer: free until 5 Jun 2027</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents">
+    <div class="toc-h">Contents</div>
+    <ol>
+      <li><a href="#start">Where we start</a></li>
+      <li><a href="#offer">Launch offer and pricing</a></li>
+      <li><a href="#streams">The eight workstreams</a></li>
+      <li><a href="#a">A · Launch readiness</a></li>
+      <li><a href="#b">B · Renter growth</a></li>
+      <li><a href="#c">C · Trust and safety operations</a></li>
+      <li><a href="#d">D · Payments after the legal gate</a></li>
+      <li><a href="#e">E · Insights and metrics</a></li>
+      <li><a href="#f">F · Mobile app</a></li>
+      <li><a href="#g">G · Landlord and agent tools</a></li>
+      <li><a href="#h">H · Expansion</a></li>
+      <li><a href="#calendar">Calendar</a></li>
+      <li><a href="#capacity">Team and capacity</a></li>
+      <li><a href="#decisions">New decisions</a></li>
+      <li><a href="#done">Definition of done</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="start">
+      <h2><span class="sn">1 · Summary</span>Where we start</h2>
+      <p class="sub">The build plan's three phases are written and tested. Phase 2 is switched off until counsel's opinion (B7). Phase 3's models run in shadow until reviewers have decided enough real cases. What's left is making the built system real, then growing on top of it.</p>
+      <div class="kpis">
+        <div class="kpi"><b>225</b><span>Backend tests passing across Phases 1–3, the hardening work and workstreams A–E, G and H</span></div>
+        <div class="kpi"><b>5 Jun 2027</b><span>End of the launch offer: every Afe charge is free until then (first 8 months of Year 1)</span></div>
+        <div class="kpi"><b>W14</b><span>Public launch, Mon 4 Jan 2027. Workstream A must finish first</span></div>
+        <div class="kpi"><b>8</b><span>Workstreams, A to H. Year 1 carries A to F; Year 2 carries G and H</span></div>
+      </div>
+      <div class="callout green">
+        <strong>How to read this plan</strong>
+        <p>Each workstream has its features, what it depends on, its size in engineer-weeks, and an exit test. A workstream starts only when its gate is met. Where a feature touches money or someone's legal position, it goes behind a rule or a switch, like protected payments did. Sizes assume the current two-engineer team; §13 shows how they fit.</p>
+      </div>
+      <h3>Strengthened in this round</h3>
+      <p>Before planning new features, we closed the gaps the build plan's status section listed. All of these are built and tested:</p>
+      <ul class="tight">
+        <li><b>Malware scanning:</b> uploaded documents are scanned by ClamAV before they're stored, and uploads are refused if the scanner is down. In staging it runs as a container beside the API.</li>
+        <li><b>Rate limits:</b> "Check before you pay", scam reports and WhatsApp lookups are limited, so no one can scrape who is on Afe or run up the WhatsApp bill.</li>
+        <li><b>Device links:</b> each browser gets a random device ID, and public accounts used on the same device are linked in the fraud graph.</li>
+        <li><b>Receipts:</b> tenants and landlords get a PDF receipt for protected payments.</li>
+        <li><b>Verifier re-checks:</b> 15% of approved homes get an unannounced re-check by a different verifier. Reversal rates per verifier are shown for the monthly review (build plan §5).</li>
+        <li><b>A fix:</b> the payment partner's confirmation address was missing from the load balancer, so real partner confirmations would never have arrived.</li>
+      </ul>
+    </section>
+
+    <section id="offer">
+      <h2><span class="sn">2 · Money</span>Launch offer and pricing</h2>
+      <p class="sub">Afe's charges are free for the first 8 months of Year 1: from W1 (5 Oct 2026) to 5 Jun 2027. The code already does this. The end date is a rule, so ending or extending the offer takes two reviewers, not a deploy.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Charge</th><th>During the launch offer</th><th>From 5 Jun 2027 (planned)</th><th>Decided by</th></tr></thead>
+        <tbody>
+          <tr><td>Verification fee</td><td class="plain">Free</td><td class="plain">At or above the measured cost of a visit; the first 50 founding landlords stay free</td><td class="plain">B6 (W6), price confirmed at W28</td></tr>
+          <tr><td>Protection fee</td><td class="plain">Free. The tenant pays only the rent held</td><td class="plain">3.5% of the amount held, paid by the tenant</td><td class="plain">B9 (W14), confirmed at W28 from pilot leakage</td></tr>
+          <tr><td>Featured listing</td><td class="plain">Free, one 14-day period at a time</td><td class="plain">GH₵150 for 14 days</td><td class="plain">B15 (W28)</td></tr>
+          <tr><td>Refund of an undelivered home</td><td class="plain">In full: Afe absorbs the gateway's charge</td><td class="plain">Less the gateway's charge (1.95% rule until the partner's real rate is known)</td><td class="plain">B7 partner contract</td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">
+        <strong>What the offer costs Afe</strong>
+        <p>No fee revenue until June 2027. Afe pays for every verification visit (Phase 0 measures the cost per visit), plus the gateway's charge on every protected payment made before 5 Jun 2027: the pilot (W24–W27) and the first eight weeks open to everyone (W28–W35). At a 1.95% gateway rate that's about GH₵585 on a GH₵30,000 tenancy: roughly GH₵15,000 for the 25 pilot tenancies alone, plus the same per tenancy after that. Plan the Year 1 budget on this. The launch offer moves the break-even date in the build plan's §14 to after W35.</p>
+      </div>
+      <h3>Switching charges on</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>When</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>W28 · 12 Apr 2027</td><td class="plain">Decide the prices (B6, B9, B15) from the Phase 0 visit costs, pilot leakage and survey question 19. Decide which homes already in progress keep the offer (B20).</td></tr>
+          <tr><td>W30 · 26 Apr 2027</td><td class="plain">Build the grandfathering from B20: homes that applied before the end date don't pay the verification fee, whenever their visit happens. Offers made before the date already keep a zero fee, because the fee is fixed at the offer.</td></tr>
+          <tr><td>W31 · 3 May 2027</td><td class="plain">Tell every landlord, agent and recent renter by SMS, WhatsApp and email: 30 days' notice, with the new prices and what stays free.</td></tr>
+          <tr><td>W33 · 17 May 2027</td><td class="plain">Dry run on staging with the end date moved to that day: checkout, quotes, featuring, refunds.</td></tr>
+          <tr><td>5 Jun 2027</td><td class="plain">Charges start by themselves. There's nothing to deploy.</td></tr>
+          <tr><td>W36–W40</td><td class="plain">Watch listing submissions, offers accepted, payments that skip protection, and drop-off at checkout. If they fall past the agreed limits, two reviewers extend the end-date rule.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="streams">
+      <h2><span class="sn">3 · Overview</span>The eight workstreams</h2>
+      <p class="sub">In the order they start. Sizes are engineer-weeks of build, not calendar time.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Workstream</th><th>Goal</th><th>When</th><th>Size</th><th>Waits for</th></tr></thead>
+        <tbody>
+          <tr><td>A · Launch readiness</td><td class="plain">Make the built system real and safe for the public</td><td class="plain">W1–W14</td><td class="plain">14</td><td class="plain">Partner choices B5, B11</td></tr>
+          <tr><td>B · Renter growth</td><td class="plain">More renters finding, trusting and booking verified homes</td><td class="plain">W14–W30</td><td class="plain">11</td><td class="plain">Public launch</td></tr>
+          <tr><td>C · Trust and safety operations</td><td class="plain">Verification that scales without losing quality</td><td class="plain">W14–W44</td><td class="plain">13</td><td class="plain">Verifiers hired, 100+ listings</td></tr>
+          <tr><td>D · Payments after the legal gate</td><td class="plain">Real money through a licensed partner, then deposits to move-out</td><td class="plain">W14–W35, then Year 2</td><td class="plain">7 + 10</td><td class="plain">B7, B16</td></tr>
+          <tr><td>E · Insights and metrics</td><td class="plain">Know weekly whether the plan's targets are being hit</td><td class="plain">W20–W40</td><td class="plain">5</td><td class="plain">Real traffic</td></tr>
+          <tr><td>F · Mobile app</td><td class="plain">An app only if a build plan §16 trigger fires</td><td class="plain">Decide W36; build W40–W60</td><td class="plain">16</td><td class="plain">B13 / B18, a mobile engineer</td></tr>
+          <tr><td>G · Landlord and agent tools</td><td class="plain">The Year 2 subscription business</td><td class="plain">W53–W78</td><td class="plain">20</td><td class="plain">Phase 2 open, B19</td></tr>
+          <tr><td>H · Expansion</td><td class="plain">New neighbourhoods, then cities, one gate at a time</td><td class="plain">W40, then Year 2</td><td class="plain">6 + per area</td><td class="plain">Build plan §17 gates</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="a">
+      <h2><span class="sn">4 · Workstream A</span>Launch readiness</h2>
+      <div class="phase">
+        <div class="phase-h"><h3>Everything the public launch needs that isn't a feature</h3><span class="when">W1–W14 · 14 engineer-weeks</span></div>
+        <div class="sprints">
+          <div class="sprint"><div class="sw">Real providers<small>W1–W8 · 4 wks</small></div><ul>
+            <li>KYC adapter for the partner chosen under B5, behind the existing interface. Test every Ghana Card result the partner can return.</li>
+            <li>SMS gateway (Hubtel or mNotify) and WhatsApp templates. Meta approval takes weeks, so submit the templates in W1.</li>
+            <li>Paystack live keys for the verification fee checkout, even while it's free, so the path is proven before 5 Jun 2027.</li>
+            <li>Turn on the ClamAV container in staging and confirm uploads are refused while it's still loading.</li></ul></div>
+          <div class="sprint"><div class="sw">Scheduled jobs<small>W3–W4 · 1 wk</small></div><ul>
+            <li>These jobs aren't wired into the infrastructure yet. Add EventBridge Scheduler to ECS RunTask for: <span class="mono">run-due</span> every 5 min, <span class="mono">score-pending</span> and <span class="mono">publish-outbox</span> every minute, <span class="mono">reconcile</span> at 02:00 and <span class="mono">detect-graph</span> at 03:00.</li>
+            <li>Alarm when a job fails, when the scoring queue backs up, and when reconciliation finds any difference.</li></ul></div>
+          <div class="sprint"><div class="sw">Data rights<small>W4–W8 · 3 wks</small></div><ul>
+            <li>Under Act 843: "download my data" and "delete my account", from the account page.</li>
+            <li>Deletion removes profile, messages and photos. The audit log, the money ledger and verification decisions are kept for the legal retention period, with the person's name replaced by a reference.</li>
+            <li>Privacy notice covering the device cookie, model scoring in shadow, and what reviewers see. Record consent. File the Data Protection Commission registration.</li></ul></div>
+          <div class="sprint"><div class="sw">Operations basics<small>W6–W10 · 3 wks</small></div><ul>
+            <li>Staff admin in the app, not the command line: add and deactivate reviewers and verifiers, change roles, sign out everywhere.</li>
+            <li>Error tracking and CloudWatch alarms for server errors, slow pages, queue backlog and failed sign-in spikes. External uptime checks. A weekly export of the audit log.</li></ul></div>
+          <div class="sprint"><div class="sw">Proof<small>W8–W13 · 3 wks</small></div><ul>
+            <li>Run the full test suite on PostgreSQL in CI, then apply Terraform to staging. <b>Restore drill 1</b>, recovered within 4 hours.</li>
+            <li>WCAG 2.1 AA pass. Test on a low-end Android phone over a throttled connection.</li>
+            <li>External security review of sign-in, uploads and the reviewer tools.</li></ul></div>
+        </div>
+        <div class="status-line"><b>Status · 24 Sep 2026</b>Everything that can be built is built and tested: WhatsApp, SMS (Hubtel) and email (SES) senders with retries; scheduled jobs and alarms in Terraform; download my data and close my account; staff admin in the app; the privacy notice and terms (drafts for counsel) with consent at sign-up; security headers and a content security policy; error references with an alarm; account suspension; the daily pilot money report; incident runbooks; a skip link and a colour contrast check. The full test suite passes on PostgreSQL 17. Waiting on people or decisions: the KYC adapter (B5), WhatsApp template approval, counsel's review and DPC registration, Terraform apply and restore drill 1 (need AWS), testing on real phones, and the security review.</div>
+        <div class="exit"><b>Exit (W14)</b>Real providers live in staging · every scheduled job running with alarms · data download and deletion working · restore drill passed · no high-severity findings open from the security review</div>
+      </div>
+    </section>
+
+    <section id="b">
+      <h2><span class="sn">5 · Workstream B</span>Renter growth</h2>
+      <div class="phase">
+        <div class="phase-h"><h3>More renters finding and trusting verified homes</h3><span class="when">W14–W30 · 11 engineer-weeks</span></div>
+        <ul class="tight">
+          <li><b>Saved searches and alerts:</b> "tell me when a verified 2-bedroom in East Legon under GH₵5,000 goes live", by SMS or WhatsApp. This is the renter's main reason to come back. (3 wks)</li>
+          <li><b>Search and book on WhatsApp:</b> go beyond the number check to searching, getting three matching listings, and booking a viewing, all in the chat. Most renters already live in WhatsApp. (3 wks)</li>
+          <li><b>Map view and neighbourhood pages:</b> each area's verified price range by bedroom count, from Afe's own listings. These pages are indexable and double as marketing. (2 wks)</li>
+          <li><b>Viewing reminders and no-shows:</b> reminders the day before and an hour before, a no-show record on both sides, and link previews when a listing is shared on WhatsApp. (1 wk)</li>
+          <li><b>Twi for the core renter journey:</b> search, listing page, "Check before you pay" and the scam warnings. English stays the default. The translation approach is B17. (2 wks)</li>
+        </ul>
+        <div class="status-line"><b>Status · 24 Sep 2026</b>Built and tested: saved searches and alerts (inbox always, at most 3 SMS or WhatsApp a day), WhatsApp FIND, ALERT, STOP, VIEW and HELP, day-before and hour-before viewing reminders, neighbourhood pages with rent ranges, link previews when a listing is shared, and a map view that shows approximate areas, never exact addresses. Twi: the catalogue and switch are built but hidden until a translator fills it (B17).</div>
+        <div class="exit"><b>Exit (W30)</b>Enquiry-to-viewing rate measured and rising · 1,000+ active alert subscribers · Twi pages reviewed by native speakers</div>
+      </div>
+    </section>
+
+    <section id="c">
+      <h2><span class="sn">6 · Workstream C</span>Trust and safety operations</h2>
+      <div class="phase">
+        <div class="phase-h"><h3>Verification that scales without losing quality</h3><span class="when">W14–W44 · 13 engineer-weeks</span></div>
+        <ul class="tight">
+          <li><b>Visit planning:</b> a reviewer's map of homes waiting for a visit, grouped into daily routes per verifier. Travel time is most of what a verification costs (build plan §5). (3 wks)</li>
+          <li><b>Re-verification at 12 months:</b> reminders to landlords 30 days before a verification expires, a queue for renewal visits, and listings paused on expiry. The first software verifications expire from about W57 (Nov 2027), so this must be ready by W52. (2 wks)</li>
+          <li><b>Appeals (B12):</b> a rejected landlord, a removed listing or an upheld report can be appealed once, to a different reviewer, with a written outcome. (2 wks)</li>
+          <li><b>Reviewer workload:</b> time from application to decision, queue age, and alerts when a service target is at risk. (1 wk)</li>
+          <li><b>Fraud investigation view:</b> the account-link graph drawn for one person, with the shared details on each link and the decisions already made. (2 wks)</li>
+          <li><b>Photo matching against public sites:</b> the build plan's Phase 3 item. Compare our photo hashes with public listing sites where their terms allow, to find the same home listed elsewhere. (2 wks)</li>
+          <li><b>Label quality:</b> a second reviewer re-decides a 5% sample, so the models are only trained on labels people agree on. (1 wk)</li>
+        </ul>
+        <div class="status-line"><b>Status · 24 Sep 2026</b>Built and tested: re-verification warnings and pausing of lapsed listings, appeals decided by a different reviewer, reviewer workload against a 3-day target, suggested visit routes, a 5% second check of labels, matching against photo hashes from permitted crawls, and a linked-accounts graph. It also fixed the visit queue, which refilled with verified homes 30 days after their visit. Waiting on: a permitted crawl of public listing sites.</div>
+        <div class="exit"><b>Exit (W44)</b>Median time from application to live ≤ 7 days at 2× W14 volume · re-verification ready before the first expiries at W57 · a model promoted beyond shadow (build plan Phase 3 exit)</div>
+      </div>
+    </section>
+
+    <section id="d">
+      <h2><span class="sn">7 · Workstream D</span>Payments after the legal gate</h2>
+      <div class="phase">
+        <div class="phase-h"><h3>Real money through a licensed partner</h3><span class="when">W14–W35 (7 wks) · Year 2 (10 wks)</span></div>
+        <ul class="tight">
+          <li><b>Partner adapter:</b> replace the test partner with the one chosen under B7: creating charges, checking the name on a payout account, releases, refunds, signed confirmations and the daily statement for reconciliation. The interface already exists. (4 wks, W14–W21)</li>
+          <li><b>Pilot support:</b> the pilot limits, manual release and the finance view are built. Add a daily pilot report for the founder, and the incident runbooks the build plan's hardening sprint calls for. (2 wks)</li>
+          <li><b>Move-in photo:</b> the tenant attaches a photo when confirming move-in, as evidence in a dispute. (1 wk)</li>
+          <li><b>Year 2 · deposits held until move-out:</b> today the deposit is released with the advance at move-in. Holding it to the end of the tenancy, with agreed deductions and disputes, is the next big trust feature. It needs counsel's opinion first (B16). (8 wks)</li>
+          <li><b>Year 2 · rent-now-pay-monthly:</b> research only, and only with a licensed lender (Statement R4). Afe never lends. (2 wks of discovery)</li>
+        </ul>
+        <div class="status-line"><b>Status · 24 Sep 2026</b>Built and tested: the move-in photo, kept private as dispute evidence. Waiting on B7: the real partner adapter and the pilot. Year 2 items (deposits to move-out, B16) are not started.</div>
+        <div class="exit"><b>Exit (W35)</b>The build plan's Phase 2 exit: pilot tenancies with no failed or unreconciled payments, every release traceable, leakage measured</div>
+      </div>
+    </section>
+
+    <section id="e">
+      <h2><span class="sn">8 · Workstream E</span>Insights and metrics</h2>
+      <div class="phase">
+        <div class="phase-h"><h3>Know every week whether the targets are being hit</h3><span class="when">W20–W40 · 5 engineer-weeks</span></div>
+        <ul class="tight">
+          <li><b>Targets dashboard:</b> the build plan's §13 targets in one place: verified live listings, time to live, confirmed fraud on verified listings, verifier pass and reversal rates, and payments that skip protection. (2 wks)</li>
+          <li><b>Cost per verification:</b> visit time and travel logged from the field app, against the verification fee, so the B6 price is set from data. (1 wk)</li>
+          <li><b>Leakage survey:</b> a short question after a viewing ("did you pay outside Afe?") to measure deals that skip protection honestly. (1 wk)</li>
+          <li><b>Accra verified rent index:</b> a quarterly public page of verified rents by area and size, for press and search engines. (1 wk)</li>
+        </ul>
+        <div class="status-line"><b>Status · 24 Sep 2026</b>Built and tested: the targets dashboard, the leakage question after viewings, cost per verification from logged travel time and fares (the hourly cost is a placeholder until Phase 0 measures it), and the public Accra rent index.</div>
+      </div>
+    </section>
+
+    <section id="f">
+      <h2><span class="sn">9 · Workstream F</span>Mobile app</h2>
+      <div class="phase">
+        <div class="phase-h"><h3>Only if a trigger fires</h3><span class="when">Decide W36 (7 Jun 2027) · build W40–W60 · 16 engineer-weeks</span></div>
+        <p>Build plan §16 triggers: 40% or more of weekly users are returning renters or landlords, move-in evidence needs device attestation, or WhatsApp engagement falls behind what push would give. If none fires at W36, keep the web app and look again at W52.</p>
+        <div class="status-line"><b>Status · 24 Sep 2026</b>Built ahead of the W36 decision, at the founder's request, in Flutter (decision B18). One app for renters, landlords and agents, and field verifiers, with an offline photo queue. The API now has its own public hostname for the app, and trusts forwarded addresses only from Afe's own proxies. Tested offline and against a live API. Still to do: push notifications (need Firebase and an Apple push key), Play Integrity on visit photos, the app ID and store listings.</div>
+        <ul class="tight">
+          <li><b>Framework (B18, formerly B13):</b> React Native or Flutter, chosen by who we can hire. The API is already built for a second client, so the app doesn't need backend work.</li>
+          <li><b>Version 1:</b> search, alerts, messages, viewings and tenancies for renters; the field app for verifiers with device attestation (Play Integrity) on visit photos; push notifications.</li>
+          <li><b>Needs a third engineer</b> (mobile). The current two stay on workstreams C and D.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="g">
+      <h2><span class="sn">10 · Workstream G</span>Landlord and agent tools</h2>
+      <div class="phase">
+        <div class="phase-h"><h3>The Year 2 subscription business</h3><span class="when">W53–W78 · Oct 2027 to Mar 2028 · 20 engineer-weeks</span></div>
+        <p>This is the brief's "later, tools for landlords". It is the recurring revenue that doesn't depend on each let. It only makes sense once landlords already trust Afe with their tenants' money, so it waits for protected payments to open.</p>
+        <ul class="tight">
+          <li><b>Rent schedule and reminders:</b> each tenancy's due dates, with reminders to the tenant and a record of what was paid. (3 wks)</li>
+          <li><b>Monthly rent collection:</b> after the first advance, collect monthly rent through the payment partner, for landlords who choose it. (5 wks, after B7 covers it)</li>
+          <li><b>Digital tenancy agreements:</b> a full Act 220 agreement from the terms already agreed, signed electronically by both sides. (3 wks)</li>
+          <li><b>Tenant records, renewals and maintenance requests:</b> one page per home and tenant, renewal offers within the advance cap, and repair requests with photos. (4 wks)</li>
+          <li><b>Agent workspace:</b> one agent managing several landlords' homes under their written authorisations. (3 wks)</li>
+          <li><b>Subscription billing:</b> tiers by number of homes, priced under B19. The first 3 months are free for landlords who joined during the launch offer. (2 wks)</li>
+        </ul>
+        <div class="status-line"><b>Status · 24 Sep 2026</b>Built and tested: the tenant register (Afe tenancies join it automatically), payment records with PDF receipts, daily rent reminders, repair requests, agreements signed in the app, renewals within the advance cap, an agent view by owner, and plans (placeholder prices until B19, free in the launch offer). Waiting on B7: collecting monthly rent through the partner.</div>
+        <div class="exit"><b>Exit (W78)</b>100 paying landlords or agents · monthly churn under 5% · no drop in verification standards for subscribed homes</div>
+      </div>
+    </section>
+
+    <section id="h">
+      <h2><span class="sn">11 · Workstream H</span>Expansion</h2>
+      <div class="phase">
+        <div class="phase-h"><h3>One gate at a time</h3><span class="when">Third neighbourhood W40 · Greater Accra Year 2 · then Kumasi</span></div>
+        <p>This follows the build plan's §17 expansion ladder. Each area opens only when its gate is met. Most of the work is people and data, not code.</p>
+        <ul class="tight">
+          <li><b>Area onboarding kit:</b> draw the area boundary, import the manual rent survey as price bands, assign verifiers, and open the area to listings only once all three are in place. (2 wks)</li>
+          <li><b>Country readiness:</b> rules are already per country. Add per-country currency, language and ID-check adapters (Nigeria's NIN, Kenya's national ID) behind the existing interfaces, when B14 picks the second country. (4 wks, Year 2)</li>
+          <li><b>Per new area:</b> about 1 engineer-week to set up, plus local verifiers and a 10-home hand-verification run, like Phase 0.</li>
+        </ul>
+        <div class="status-line"><b>Status · 24 Sep 2026</b>Built and tested: the area onboarding kit. An admin creates an area closed, loads its price survey, and it opens only with a boundary, a survey for 2+ sizes and an active verifier. Country readiness waits on B14.</div>
+      </div>
+    </section>
+
+    <section id="calendar">
+      <h2><span class="sn">12 · Schedule</span>Calendar</h2>
+      <p class="sub">Quarters of the Afe year. W1 = 5 Oct 2026; Year 2 starts W53, 4 Oct 2027.</p>
+      <div class="tbl"><table class="cal">
+        <thead><tr><th>Workstream</th><th>Q1 · W1–13<br><small>Oct–Dec 2026</small></th><th>Q2 · W14–26<br><small>Jan–Mar 2027</small></th><th>Q3 · W27–39<br><small>Apr–Jun 2027</small></th><th>Q4 · W40–52<br><small>Jul–Sep 2027</small></th><th>Year 2<br><small>Oct 2027 on</small></th></tr></thead>
+        <tbody>
+          <tr><td>A · Launch readiness</td><td class="on">Providers, scheduled jobs, data rights, drill 1</td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>B · Renter growth</td><td></td><td class="on">Alerts, WhatsApp search</td><td class="on">Maps, Twi, reminders</td><td></td><td></td></tr>
+          <tr><td>C · Trust and safety</td><td></td><td class="on">Visit planning, appeals</td><td class="on">Investigation view, label quality</td><td class="on">Re-verification, photo matching</td><td></td></tr>
+          <tr><td>D · Payments</td><td></td><td class="on">Partner adapter</td><td class="on">Pilot, then open W28</td><td></td><td class="on">Deposits to move-out</td></tr>
+          <tr><td>E · Insights</td><td></td><td class="on">Targets dashboard</td><td class="on">Costs, leakage</td><td class="on">Rent index</td><td></td></tr>
+          <tr><td>F · Mobile app</td><td></td><td></td><td class="gate">Decide W36</td><td class="on">Build if triggered</td><td class="on">Ship v1</td></tr>
+          <tr><td>G · Landlord tools</td><td></td><td></td><td></td><td class="gate">Design, B19</td><td class="on">Build and launch</td></tr>
+          <tr><td>H · Expansion</td><td></td><td></td><td></td><td class="on">Third area W40</td><td class="on">Greater Accra, Kumasi</td></tr>
+          <tr><td>Launch offer</td><td class="free">Free</td><td class="free">Free</td><td class="free">Free until 5 Jun</td><td></td><td></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="capacity">
+      <h2><span class="sn">13 · People</span>Team and capacity</h2>
+      <p class="sub">Two engineers give about 70 engineer-weeks of build in Year 1, after holidays and launch support.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Period</th><th>Planned build</th><th>Fits?</th></tr></thead>
+        <tbody>
+          <tr><td>Year 1, W1–W52</td><td class="plain">A 14 + B 11 + C 13 + D 7 + E 5 + H 2 = 52 engineer-weeks</td><td class="plain">Yes, with about 18 weeks spare for fixes found in the pilot and launch</td></tr>
+          <tr><td>Mobile app, W40–W60</td><td class="plain">F 16 engineer-weeks</td><td class="plain">Only with a third engineer (mobile), hired by W38 if the W36 decision is yes</td></tr>
+          <tr><td>Year 2, from W53</td><td class="plain">G 20 + D 10 + H 4 + per-area setup</td><td class="plain">Two engineers plus the mobile engineer after the app ships</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="decisions">
+      <h2><span class="sn">14 · Open</span>New decisions</h2>
+      <p class="sub">These add to the build plan's B1–B14.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>#</th><th>Decision</th><th>Recommendation</th><th>By</th></tr></thead>
+        <tbody>
+          <tr><td>B15</td><td class="plain">Prices after the launch offer: verification fee, protection fee, featuring</td><td class="plain">Set from Phase 0 visit costs and pilot leakage; announce 30 days ahead</td><td><span class="pill p2">W28</span></td></tr>
+          <tr><td>B16</td><td class="plain">Hold deposits until move-out</td><td class="plain">Counsel's opinion, then build in Year 2</td><td><span class="pill gate">W44</span></td></tr>
+          <tr><td>B17</td><td class="plain">Twi translation approach</td><td class="plain">A professional translator plus native-speaker review of every scam warning</td><td><span class="pill p1">W16</span></td></tr>
+          <tr><td>B18</td><td class="plain">App framework (was B13)</td><td class="plain">Decide against the §16 triggers; choose by hiring</td><td><span class="pill p3">W36</span></td></tr>
+          <tr><td>B19</td><td class="plain">Landlord tools subscription price</td><td class="plain">Tiers by number of homes; test with 20 founding landlords first</td><td><span class="pill p3">W48</span></td></tr>
+          <tr><td>B20</td><td class="plain">Which homes in progress keep the launch offer</td><td class="plain">Any home that applied before 5 Jun 2027 keeps a free verification</td><td><span class="pill p2">W28</span></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="done">
+      <h2><span class="sn">15 · Standard</span>Definition of done</h2>
+      <p class="sub">Every feature in this plan meets all of these before it ships.</p>
+      <ul class="checklist">
+        <li>Automated tests for its rules, including the ways it can be misused</li>
+        <li>Every decision it makes or supports is written to the audit log</li>
+        <li>A privacy check for any new personal data: what, why, who sees it, how long it's kept</li>
+        <li>WCAG 2.1 AA, and usable on a low-end Android phone on a slow connection</li>
+        <li>Anything touching money or legal limits sits behind a rule or a switch, with two-person approval</li>
+        <li>A runbook entry for what can go wrong, and an alarm if it matters</li>
+        <li>The build plan's status section is updated when it ships</li>
+      </ul>
+      <p class="foot">Implementation plan built on the Afe Build Plan v1.2, the One-Page Brief (Sep 2026) and Project Statement v3.3. Sizes and dates are planning estimates to check at each gate, not commitments. Legal points are questions for counsel, not legal advice.</p>
+    </section>
+  </main>
+</div>

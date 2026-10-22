@@ -1,0 +1,51 @@
+# Afe's front door on the free server.
+#   SITE_ADDRESS  the website, e.g. dev.afe.example
+#   API_ADDRESS   the API for the mobile apps, e.g. api.dev.afe.example
+# Behind Cloudflare Tunnel, both start with http:// (Cloudflare does HTTPS).
+{
+	servers {
+		# The visitor's real address: trust X-Forwarded-For only from private addresses
+		# (cloudflared, when the Tunnel is used), never from the internet.
+		trusted_proxies static private_ranges
+		client_ip_headers X-Forwarded-For
+	}
+}
+
+(to_api) {
+	reverse_proxy api:8000 {
+		header_up X-Forwarded-For {client_ip}
+	}
+}
+
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	# Partner webhooks go straight to the API: the same three paths the AWS load balancer
+	# forwards (infra/terraform/staging/services.tf). Everything else is the website, which
+	# calls the API itself.
+	@webhooks path /api/v1/payments/webhook /api/v1/webhooks/whatsapp /api/v1/tenancies/webhook
+	handle @webhooks {
+		import to_api
+	}
+
+	handle {
+		reverse_proxy web:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+# The mobile apps call the API directly here.
+{$API_ADDRESS} {
+	encode zstd gzip
+	import to_api
+	log {
+		output stdout
+		format json
+	}
+}

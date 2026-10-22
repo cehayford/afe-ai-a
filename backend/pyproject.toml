@@ -1,0 +1,22 @@
+[project]
+name = "afe"
+version = "0.1.0"
+description = "Afe: verified homes and protected rent for renters in Accra"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "FAST"]
+ignore = ["S101", "E501", "B008"]  # line length is left to `ruff format`; B008 = FastAPI's Depends() defaults
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S311"]
+"app/seed.py" = ["S311"]  # demo data, not secrets
+"migrations/versions/**" = ["E501", "W291", "F401", "I001"]  # Alembic writes the same imports into every file
